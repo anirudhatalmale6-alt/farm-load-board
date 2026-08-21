@@ -91,16 +91,19 @@ select:focus,input:focus,textarea:focus{outline:2px solid #9fb197;outline-offset
 .cty:hover{stroke:var(--bar);stroke-width:2.6}
 .cty.sel{stroke:var(--accent);stroke-width:4}
 .cty.dim{fill:#ece9e0}
-/* the five regions, off the state's own map - muted a shade so the
-   roads and the load dots still read on top of them */
-.r-lake{fill:#bcd4b0}
-.r-till{fill:#a9cad6}
-.r-glaciated{fill:#dda79e}
-.r-unglaciated{fill:#c4b2d3}
-.r-bluegrass{fill:#e9c692}
+/* the five regions. Not the sign's colours - these are keyed to the ground:
+   water at the lake, grain gold on the flat dirt, pasture green on the rolling
+   country, clay on the hills. Kept pale so the roads and load dots read on top. */
+.r-lake{fill:#b0c8cd}
+.r-till{fill:#e2d4a3}
+.r-glaciated{fill:#b4c497}
+.r-unglaciated{fill:#d29e80}
+.r-bluegrass{fill:#c9a6ad}
+.paper{fill:#f3ecda;stroke:#d8cfb8;stroke-width:3}
+.edge{fill:none;stroke:#4a4f42;stroke-width:5;stroke-linejoin:round}
 
-/* roads and dots must never eat a county tap */
-.roads,.dots,.deco{pointer-events:none}
+/* nothing drawn over the counties may eat a county tap */
+.paper,.edge,.roads,.dots,.deco{pointer-events:none}
 .road-case{fill:none;stroke:#fdfbf6;stroke-width:9;stroke-linecap:round;stroke-linejoin:round}
 .road{fill:none;stroke:#5b5f52;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
 .shield{fill:#fdfbf6;stroke:#5b5f52;stroke-width:2.6}
@@ -130,11 +133,11 @@ select:focus,input:focus,textarea:focus{outline:2px solid #9fb197;outline-offset
 .key i{width:18px;height:12px;border-radius:2px;display:inline-block;
   border:1px solid rgba(0,0,0,.14);flex:none}
 /* the swatches are HTML, not SVG, so they need background - fill does nothing here */
-.key i.r-lake{background:#bcd4b0}
-.key i.r-till{background:#a9cad6}
-.key i.r-glaciated{background:#dda79e}
-.key i.r-unglaciated{background:#c4b2d3}
-.key i.r-bluegrass{background:#e9c692}
+.key i.r-lake{background:#b0c8cd}
+.key i.r-till{background:#e2d4a3}
+.key i.r-glaciated{background:#b4c497}
+.key i.r-unglaciated{background:#d29e80}
+.key i.r-bluegrass{background:#c9a6ad}
 .key i.kdot{width:12px;height:12px;border-radius:50%;background:#8f4023;
   opacity:.85;border:1px solid #fffdf8}
 .hovname{display:none;position:absolute;right:4px;top:4px;max-width:112px;

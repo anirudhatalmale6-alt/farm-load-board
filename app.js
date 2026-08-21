@@ -156,8 +156,15 @@
 
   (function buildMap() {
     var W = window.OHIO.w, H = window.OHIO.h, MPU = window.OHIO.mpu;
-    var s = '<svg viewBox="0 0 ' + W + ' ' + H +
+    // a margin of paper around the state, so the frame does not run along the
+    // county lines on the west and south edges
+    var PAD = 34;
+    var s = '<svg viewBox="' + (-PAD) + ' ' + (-PAD) + ' ' + (W + PAD * 2) + ' ' + (H + PAD * 2) +
             '" role="img" aria-label="Map of Ohio counties by region">';
+
+    // paper under everything, so the map reads as a printed plate
+    s += '<rect class="paper" x="' + (-PAD + 2) + '" y="' + (-PAD + 2) +
+         '" width="' + (W + PAD * 2 - 4) + '" height="' + (H + PAD * 2 - 4) + '" rx="4"/>';
 
     // counties first, tinted by region - the colour blocks are the regions,
     // exactly the way the state's own map does it
@@ -165,6 +172,9 @@
       s += '<path class="cty" data-n="' + esc(c.n) + '" data-r="' + esc(c.r) +
            '" d="' + c.d + '"><title>' + esc(c.n) + ' County</title></path>';
     });
+
+    // the state edge, drawn heavy over the county lines
+    s += '<path class="edge" d="' + window.OHIO.outline + '"/>';
 
     // interstates on top, white casing under a dark line so they read over any colour
     s += '<g class="roads">';
