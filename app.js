@@ -176,9 +176,18 @@
     mapHolder.addEventListener('mouseout', function () { hovName.textContent = ''; });
   })();
 
-  function paintMap(list) {
+  // The map is shaded by what is out there, ignoring the county/distance filter -
+  // otherwise picking a county empties the map and you cannot see where to go next.
+  function paintMap() {
     var counts = {};
-    list.forEach(function (l) { counts[l.county] = (counts[l.county] || 0) + 1; });
+    LOADS.forEach(function (l) {
+      if (state.type !== 'all' && l.type !== state.type) return;
+      if (state.cat !== 'all') {
+        if (state.cat === 'truck') { if (l.type !== 'truck') return; }
+        else if (l.cat !== state.cat) return;
+      }
+      counts[l.county] = (counts[l.county] || 0) + 1;
+    });
     var max = 0;
     for (var k in counts) if (counts[k] > max) max = counts[k];
 
@@ -316,7 +325,13 @@
 
   function render() {
     var v = visible();
-    paintMap(v);
+    paintMap();
+
+    var hint = document.querySelector('.maphead .hint');
+    if (state.county !== 'all') hint.textContent = 'Showing ' + state.county + ' County. Tap it again to clear.';
+    else if (state.region !== 'all') hint.textContent = 'Showing ' + state.region + ' Ohio. Tap any county to narrow it.';
+    else hint.textContent = 'Tap a county to see what is moving there';
+
     listTitle.innerHTML = titleFor();
     listCount.textContent = v.length + (v.length === 1 ? ' listing' : ' listings');
 

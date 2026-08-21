@@ -94,14 +94,16 @@ select:focus,input:focus,textarea:focus{outline:2px solid #9fb197;outline-offset
    or a tap lands on the county above the one you aimed at */
 .maphead{position:relative;height:30px;padding:4px 4px 0;font-size:13.5px;
   color:var(--ink-soft);overflow:hidden}
-.maphead .hint{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  padding-right:120px}
+.maphead .hint{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (hover:hover){.maphead .hint{padding-right:118px}}
 .legend{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ink-soft);
   padding:2px 4px 6px}
 .legend i{width:20px;height:11px;border-radius:2px;display:inline-block}
-.hovname{position:absolute;right:4px;top:4px;max-width:115px;font-weight:600;color:var(--ink);
-  background:var(--card);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+.hovname{display:none;position:absolute;right:4px;top:4px;max-width:112px;
+  font-weight:600;color:var(--ink);background:var(--card);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   padding-left:8px;pointer-events:none}
+@media (hover:hover){.hovname{display:block}}
 
 /* ---------- listings ---------- */
 .listhead{display:flex;justify-content:space-between;align-items:baseline;
