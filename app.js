@@ -281,7 +281,9 @@
   function card(l) {
     var cls = 'load t-' + l.type + (l.mine ? ' mine' : '');
     var where = esc(l.town ? l.town + ', ' + l.county + ' County' : l.county + ' County');
-    var dist = l._d != null ? '<span class="dot">&middot;</span>' + l._d + ' miles away' : '';
+    var dist = '';
+    if (l._d != null)
+      dist = '<span class="dot">&middot;</span>' + (l._d === 0 ? 'same county' : l._d + ' miles away');
     var pill = l.mine
       ? '<span class="pill mine">Yours</span>'
       : '<span class="pill t-' + l.type + '">' + TYPE_WORD[l.type] + '</span>';
