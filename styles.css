@@ -51,9 +51,11 @@ h1,h2,h3{font-family:Georgia,"Times New Roman",serif;font-weight:600;margin:0}
 .wrap{max-width:1080px;margin:0 auto;padding:16px}
 .cols{display:grid;grid-template-columns:340px 1fr;gap:22px;align-items:start;
   grid-template-areas:"side map" "side list"}
-.side{grid-area:side}
-.mapcol{grid-area:map}
-.listcol{grid-area:list}
+/* min-width:0 or the nowrap map caption sets the column's min-content width
+   and the whole page scrolls sideways on a phone */
+.side{grid-area:side;min-width:0}
+.mapcol{grid-area:map;min-width:0}
+.listcol{grid-area:list;min-width:0}
 @media (max-width:860px){
   .cols{grid-template-columns:1fr;gap:16px;grid-template-areas:"map" "side" "list"}
 }
