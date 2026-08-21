@@ -165,6 +165,14 @@ select:focus,input:focus,textarea:focus{outline:2px solid #9fb197;outline-offset
 .pill.t-need{background:#e2ecf1;color:#31586d}
 .pill.t-truck{background:#f6ecd6;color:#8a6015}
 .pill.mine{background:#dcefd4;color:#2f6122}
+/* every load carries its own clock, so nobody has to wonder if it is still good */
+.runline{margin-top:6px}
+.run{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.3px;
+  padding:2px 9px;border-radius:999px;background:#e9efe4;color:#4a6b3e;white-space:nowrap}
+.run.last{background:#f7ecd5;color:#8a6015}
+.run.out{background:#ece7df;color:#6d685e}
+.load.spent{opacity:.7}
+.load.spent h3,.load.spent .price{color:var(--ink-soft)}
 .meta{color:var(--ink-soft);font-size:14px;margin-top:5px}
 .meta b{color:var(--ink);font-weight:600}
 .dot{color:#bdb7a6;padding:0 5px}

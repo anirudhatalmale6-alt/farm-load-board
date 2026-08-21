@@ -61,6 +61,22 @@
     return Math.round(2 * R * Math.asin(Math.sqrt(h)));
   }
 
+  // A load runs five days and then comes off on its own. That is the whole point
+  // of the name, and it is what keeps the board from filling up with loads that
+  // went last month and never got taken down.
+  var RUN_DAYS = 5;
+
+  function daysLeft(ms) {
+    return RUN_DAYS - Math.floor((Date.now() - ms) / 86400000);
+  }
+
+  function runBit(l) {
+    var n = daysLeft(l.posted);
+    if (n <= 0) return '<span class="run out">Ran its five days</span>';
+    if (n === 1) return '<span class="run last">Last day</span>';
+    return '<span class="run">' + n + ' days left</span>';
+  }
+
   function daysAgo(ms) {
     var d = Math.round((Date.now() - ms) / 86400000);
     if (d <= 0) return 'today';
@@ -107,7 +123,9 @@
       m.cat = categorize(m.commodity, m.type);
       out.push(m);
     });
-    return out;
+    // Expired loads leave the board. Your own stay, so you are not left wondering
+    // where your listing went - you get told, and you get a button to put it back.
+    return out.filter(function (l) { return l.mine || daysLeft(l.posted) > 0; });
   }
 
   var LOADS = loadAll();
@@ -380,7 +398,8 @@
   }
 
   function card(l) {
-    var cls = 'load t-' + l.type + (l.mine ? ' mine' : '');
+    var dead = daysLeft(l.posted) <= 0;
+    var cls = 'load t-' + l.type + (l.mine ? ' mine' : '') + (dead ? ' spent' : '');
     var where = esc(l.town ? l.town + ', ' + l.county + ' County' : l.county + ' County');
     var dist = '';
     if (l._d != null)
@@ -391,12 +410,15 @@
 
     return '<div class="' + cls + '">' +
       '<div class="load-top"><h3>' + esc(l.commodity) + '</h3>' + pill + '</div>' +
+      '<div class="runline">' + runBit(l) + '</div>' +
       '<div class="meta"><b>' + esc(l.qty) + '</b><span class="dot">&middot;</span>' +
         where + dist + '</div>' +
       (l.desc ? '<div class="desc">' + esc(l.desc) + '</div>' : '') +
       '<div class="load-foot">' +
         '<span class="who">' + esc(l.who) + '<span class="dot">&middot;</span>' +
           'posted ' + daysAgo(l.posted) +
+          (l.mine && dead ? ' <button class="clearlink" data-again="' + esc(l.id) +
+            '">Put it back up</button>' : '') +
           (l.mine ? ' <button class="clearlink" data-drop="' + esc(l.id) +
             '">Take it down</button>' : '') + '</span>' +
         '<span><span class="price">' + esc(l.price) + '</span>' + phoneBit(l) + '</span>' +
@@ -469,6 +491,23 @@
       localStorage.setItem(STORE, JSON.stringify(kept));
     } catch (err) {}
     LOADS = LOADS.filter(function (l) { return l.id !== id; });
+    render();
+  });
+
+  // a spent listing of your own, put back up for another five days
+  list.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('[data-again]') : null;
+    if (!btn) return;
+    var id = btn.getAttribute('data-again');
+    var now = Date.now();
+    try {
+      var kept = JSON.parse(localStorage.getItem(STORE) || '[]').map(function (m) {
+        if (m.id === id) m.posted = now;
+        return m;
+      });
+      localStorage.setItem(STORE, JSON.stringify(kept));
+    } catch (err) {}
+    LOADS.forEach(function (l) { if (l.id === id) l.posted = now; });
     render();
   });
 
