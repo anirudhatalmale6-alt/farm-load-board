@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Farm Load Board &mdash; Ohio</title>
+<meta name="description" content="A plain load board for Ohio farms. Manure, hay, straw, grain, gravel and mulch, listed county by county.">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <h1>Farm Load Board</h1>
+      <span class="tag">Ohio &middot; 88 counties</span>
+    </div>
+    <div class="sub">Manure, hay, straw, grain, gravel, mulch. Posted by farmers, hauled by neighbors.</div>
+    <div class="acts">
+      <a class="btn btn-go" href="post.html">Post a load</a>
+      <a class="btn btn-ghost" href="#board">Browse the board</a>
+    </div>
+  </div>
+</header>
+
+<div class="demo">Sample listings only &mdash; every farm and phone number below is made up, so you can see how a full board would look.</div>
+
+<div class="wrap">
+  <div class="cols">
+
+    <div class="side">
+      <div class="panel">
+        <h3>What are you after?</h3>
+        <div class="chips" id="typeChips"></div>
+
+        <label class="fl">Commodity</label>
+        <div class="chips" id="catChips"></div>
+
+        <label class="fl">Region of the state</label>
+        <select id="regionSel"></select>
+
+        <label class="fl">County</label>
+        <select id="countySel"></select>
+
+        <label class="fl" id="radiusLabel">Distance from that county</label>
+        <select id="radiusSel">
+          <option value="0">That county only</option>
+          <option value="25">Within 25 miles</option>
+          <option value="50" selected>Within 50 miles</option>
+          <option value="75">Within 75 miles</option>
+          <option value="100">Within 100 miles</option>
+        </select>
+
+        <label class="fl">Sort by</label>
+        <select id="sortSel">
+          <option value="new">Newest first</option>
+          <option value="near">Closest first</option>
+        </select>
+
+        <div style="margin-top:14px">
+          <button class="clearlink" id="clearBtn">Clear all filters</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mapcol">
+      <div class="mapbox" id="board">
+        <div class="maphead">
+          <span>Tap a county to see what is moving there</span>
+          <span class="hovname" id="hovName"></span>
+        </div>
+        <div id="mapHolder"></div>
+        <div class="legend">
+          <span>Fewer loads</span>
+          <i style="background:#eae4d5"></i><i style="background:#d8e3cd"></i><i style="background:#b9d0a8"></i><i style="background:#8fb87a"></i><i style="background:#5f9448"></i>
+          <span>More</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="listcol">
+      <div class="listhead">
+        <h2 id="listTitle">Everything on the board</h2>
+        <span class="count" id="listCount"></span>
+      </div>
+
+      <div id="list"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="foot">
+  Working prototype. Nothing is saved anywhere but your own phone yet &mdash; anything you post here stays on this device.
+</div>
+
+<script src="ohio.js"></script>
+<script src="samples.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

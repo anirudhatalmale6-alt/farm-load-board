@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Post a load &mdash; Farm Load Board</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <h1>Post a load</h1>
+      <span class="tag">Takes about a minute</span>
+    </div>
+    <div class="acts">
+      <a class="btn btn-ghost" href="index.html">&larr; Back to the board</a>
+    </div>
+  </div>
+</header>
+
+<div class="demo">Prototype &mdash; what you post here is saved on this phone only, so post away and see how it looks.</div>
+
+<div class="wrap form">
+  <div class="panel">
+
+    <label class="fl">What is this?</label>
+    <div class="pick" id="typePick">
+      <button type="button" data-k="have">I have a load</button>
+      <button type="button" data-k="need">I want a load</button>
+      <button type="button" data-k="truck">I have a truck</button>
+    </div>
+    <div class="help" id="typeHelp">Pick one to get started.</div>
+
+    <label class="fl" for="commodity">What is it</label>
+    <input id="commodity" list="commodities" placeholder="Dairy manure, 2nd cut hay, #57 gravel...">
+    <datalist id="commodities">
+      <option>Dairy manure</option><option>Beef manure</option><option>Hog manure</option>
+      <option>Horse manure</option><option>Poultry litter</option><option>Compost</option>
+      <option>Hay - 1st cut</option><option>Hay - 2nd cut</option><option>Round bale hay</option>
+      <option>Straw</option><option>Corn silage</option><option>Oats</option><option>Shell corn</option>
+      <option>Gravel - #57</option><option>Gravel - #304</option><option>Screened sand</option>
+      <option>Hardwood mulch</option><option>Sawdust</option><option>Topsoil</option>
+    </datalist>
+    <div class="err" id="errCommodity">Put in what you are hauling.</div>
+
+    <div class="row2">
+      <div>
+        <label class="fl" for="qty">How much</label>
+        <input id="qty" placeholder="40 loads, 300 ton, 900 bales">
+      </div>
+      <div>
+        <label class="fl" for="price">Price</label>
+        <input id="price" placeholder="$18/ton, free you haul">
+      </div>
+    </div>
+
+    <div class="row2">
+      <div>
+        <label class="fl" for="county">County</label>
+        <select id="county"></select>
+        <div class="err" id="errCounty">Pick your county.</div>
+      </div>
+      <div>
+        <label class="fl" for="town">Nearest town</label>
+        <input id="town" placeholder="Kidron">
+      </div>
+    </div>
+
+    <label class="fl" for="desc">Anything else worth saying</label>
+    <textarea id="desc" rows="4" placeholder="Access, timing, whether you can load, how far you will travel."></textarea>
+    <div class="help">Say it the way you would say it on the phone. That is what gets calls.</div>
+
+    <div class="row2">
+      <div>
+        <label class="fl" for="who">Your name or farm</label>
+        <input id="who" placeholder="Miller Dairy">
+        <div class="err" id="errWho">Folks need to know who they are calling.</div>
+      </div>
+      <div>
+        <label class="fl" for="phone">Phone</label>
+        <input id="phone" type="tel" inputmode="tel" placeholder="330-555-0148">
+        <div class="err" id="errPhone">A phone number is how this works.</div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px">
+      <button class="btn btn-go" id="saveBtn" style="width:100%;padding:14px">Put it on the board</button>
+    </div>
+    <div class="help" style="text-align:center;margin-top:10px">
+      Listings would run 30 days, then we would ask if it is still good.
+    </div>
+
+  </div>
+</div>
+
+<div class="foot"><a href="index.html">Back to the board</a></div>
+
+<script src="ohio.js"></script>
+<script>
+(function () {
+  'use strict';
+  var STORE = 'flb.loads.v1';
+  var type = '';
+
+  var sel = document.getElementById('county');
+  sel.innerHTML = '<option value="">Choose a county</option>' +
+    window.OHIO.counties.map(function (c) {
+      return '<option value="' + c.n + '">' + c.n + '</option>';
+    }).join('');
+
+  var HELP = {
+    have:  'Good. Tell folks what it is, roughly how much, and whether you can load it.',
+    need:  'Good. Say what you are after and how far you will travel for it.',
+    truck: 'Good. Say what you run, what counties you cover, and how you charge.'
+  };
+
+  var pick = document.getElementById('typePick');
+  var help = document.getElementById('typeHelp');
+  Array.prototype.forEach.call(pick.children, function (b) {
+    b.addEventListener('click', function () {
+      type = b.getAttribute('data-k');
+      Array.prototype.forEach.call(pick.children, function (o) {
+        o.className = o === b ? 'on' : '';
+      });
+      help.textContent = HELP[type];
+    });
+  });
+
+  function show(id, on) {
+    document.getElementById(id).className = on ? 'err show' : 'err';
+  }
+
+  document.getElementById('saveBtn').addEventListener('click', function () {
+    var v = function (id) { return document.getElementById(id).value.trim(); };
+    var commodity = v('commodity'), county = v('county'), who = v('who'), phone = v('phone');
+
+    show('errCommodity', !commodity);
+    show('errCounty', !county);
+    show('errWho', !who);
+    show('errPhone', !phone);
+    if (!type) { help.textContent = 'Pick one of the three above first.'; help.style.color = '#a3341f'; }
+    if (!commodity || !county || !who || !phone || !type) {
+      var bad = document.querySelector('.err.show') || pick;
+      bad.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    var rec = {
+      id: 'u' + Date.now(),
+      type: type,
+      commodity: commodity,
+      qty: v('qty') || 'Call for details',
+      price: v('price') || 'Call',
+      county: county,
+      town: v('town'),
+      desc: v('desc'),
+      who: who,
+      phone: phone,
+      posted: Date.now()
+    };
+
+    var all = [];
+    try { all = JSON.parse(localStorage.getItem(STORE) || '[]'); } catch (e) { all = []; }
+    all.push(rec);
+    try { localStorage.setItem(STORE, JSON.stringify(all)); } catch (e) {}
+
+    location.href = 'index.html?mine=1';
+  });
+})();
+</script>
+</body>
+</html>
