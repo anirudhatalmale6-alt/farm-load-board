@@ -134,6 +134,9 @@ select:focus,input:focus,textarea:focus{outline:2px solid #9fb197;outline-offset
   margin-top:11px;padding-top:10px;border-top:1px solid #ece7da;flex-wrap:wrap}
 .who{font-size:14px;color:var(--ink-soft)}
 .price{font-family:Georgia,serif;font-size:17px;color:var(--accent-dk)}
+.interest{margin-top:9px;padding-top:9px;border-top:1px solid #ece7da;
+  font-size:13.5px;color:var(--ink-soft)}
+.interest.on{color:#3c6a32;font-weight:600}
 .empty{background:var(--card);border:1px dashed var(--line);border-radius:8px;
   padding:28px 18px;text-align:center;color:var(--ink-soft)}
 .empty b{display:block;color:var(--ink);font-size:17px;margin-bottom:6px;

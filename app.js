@@ -272,11 +272,46 @@
     radiusSel.style.opacity = on ? '1' : '.5';
   }
 
+  // ---------- interest ----------
+  // The number is not in the page until somebody asks for it: scrapers get nothing,
+  // and the count of who asked is what tells a poster the board is alive.
+  // Prototype: counts live on this device. Real version counts on the server.
+
+  var VIEWS = 'flb.views.v1';
+  var SHOWN = {};                       // revealed this visit only
+
+  function views() {
+    try { return JSON.parse(localStorage.getItem(VIEWS) || '{}'); } catch (e) { return {}; }
+  }
+  function bumpView(id) {
+    var v = views();
+    v[id] = (v[id] || 0) + 1;
+    try { localStorage.setItem(VIEWS, JSON.stringify(v)); } catch (e) {}
+    return v[id];
+  }
+
   // ---------- listings ----------
 
   var list = document.getElementById('list');
   var listTitle = document.getElementById('listTitle');
   var listCount = document.getElementById('listCount');
+
+  function phoneBit(l) {
+    if (!l.phone) return '';
+    if (SHOWN[l.id])
+      return ' <a class="btn btn-go btn-sm" href="' + telHref(l.phone) + '">Call ' +
+             esc(l.phone) + '</a>';
+    return ' <button class="btn btn-go btn-sm" data-show="' + esc(l.id) + '">Show number</button>';
+  }
+
+  // Only the poster sees who has been asking - that is what brings him back.
+  function interestBit(l) {
+    if (!l.mine) return '';
+    var n = views()[l.id] || 0;
+    if (!n) return '<div class="interest">Nobody has asked for your number yet.</div>';
+    return '<div class="interest on">' + n +
+      (n === 1 ? ' person has' : ' people have') + ' asked for your number.</div>';
+  }
 
   function card(l) {
     var cls = 'load t-' + l.type + (l.mine ? ' mine' : '');
@@ -298,10 +333,8 @@
           'posted ' + daysAgo(l.posted) +
           (l.mine ? ' <button class="clearlink" data-drop="' + esc(l.id) +
             '">Take it down</button>' : '') + '</span>' +
-        '<span><span class="price">' + esc(l.price) + '</span>' +
-        (l.phone ? ' <a class="btn btn-go btn-sm" href="' + telHref(l.phone) + '">Call ' +
-          esc(l.phone) + '</a>' : '') + '</span>' +
-      '</div></div>';
+        '<span><span class="price">' + esc(l.price) + '</span>' + phoneBit(l) + '</span>' +
+      '</div>' + interestBit(l) + '</div>';
   }
 
   function titleFor() {
@@ -347,6 +380,16 @@
     }
     list.innerHTML = v.map(card).join('');
   }
+
+  // reveal a number on request
+  list.addEventListener('click', function (e) {
+    var ask = e.target.closest ? e.target.closest('[data-show]') : null;
+    if (!ask) return;
+    var id = ask.getAttribute('data-show');
+    SHOWN[id] = true;
+    bumpView(id);
+    render();
+  });
 
   // your own postings: take one down when the load is gone
   list.addEventListener('click', function (e) {
