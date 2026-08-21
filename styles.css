@@ -30,6 +30,9 @@ h1,h2,h3{font-family:Georgia,"Times New Roman",serif;font-weight:600;margin:0}
 .brand h1{font-size:26px;letter-spacing:.4px;color:#fff;line-height:1.15}
 .brand .tag{font-size:13px;color:#bcc7b4}
 .sub{margin-top:6px;font-size:14px;color:#c6d0be}
+/* the five day rule, said out loud where a first-timer will see it */
+.rule{margin-top:9px;padding:8px 11px;font-size:13px;line-height:1.5;color:#dce4d5;
+  background:rgba(255,255,255,.07);border-left:3px solid var(--accent);border-radius:0 5px 5px 0}
 .acts{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
 .btn{
   display:inline-block;border:0;cursor:pointer;text-decoration:none;
@@ -170,6 +173,7 @@ select:focus,input:focus,textarea:focus{outline:2px solid #9fb197;outline-offset
 .run{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.3px;
   padding:2px 9px;border-radius:999px;background:#e9efe4;color:#4a6b3e;white-space:nowrap}
 .run.last{background:#f7ecd5;color:#8a6015}
+.run.stand{background:#e6eef2;color:#3a6178}
 .run.out{background:#ece7df;color:#6d685e}
 .load.spent{opacity:.7}
 .load.spent h3,.load.spent .price{color:var(--ink-soft)}

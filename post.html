@@ -93,9 +93,9 @@
     <div style="margin-top:20px">
       <button class="btn btn-go" id="saveBtn" style="width:100%;padding:14px">Put it on the board</button>
     </div>
-    <div class="help" style="text-align:center;margin-top:10px">
-      Your load runs five days, then it comes off on its own.
-      You can put it back up any time with one tap.
+    <div class="help" style="text-align:center;margin-top:10px" id="runNote">
+      Loads run five days, then come off on their own. Trucks for hire stay up
+      until you take them down.
     </div>
 
   </div>
@@ -132,8 +132,17 @@
     truck: 'Good. Say what you run, what counties you cover, and how you charge.'
   };
 
+  // once he has picked, the note above the button says the rule for HIS listing,
+  // not both rules - he does not care about the one that is not his
+  var RUNNOTE = {
+    have:  'Your load runs five days, then it comes off on its own. One tap puts it back up.',
+    need:  'Your listing runs five days, then it comes off on its own. One tap puts it back up.',
+    truck: 'Your truck stays up until you take it down. No re-posting.'
+  };
+
   var pick = document.getElementById('typePick');
   var help = document.getElementById('typeHelp');
+  var runNote = document.getElementById('runNote');
   Array.prototype.forEach.call(pick.children, function (b) {
     b.addEventListener('click', function () {
       type = b.getAttribute('data-k');
@@ -141,6 +150,7 @@
         o.className = o === b ? 'on' : '';
       });
       help.textContent = HELP[type];
+      runNote.textContent = RUNNOTE[type];
     });
   });
 

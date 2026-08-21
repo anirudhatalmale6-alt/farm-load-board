@@ -66,11 +66,24 @@
   // went last month and never got taken down.
   var RUN_DAYS = 5;
 
+  // A truck is not a load. A load has a clock on it - the pit gets pumped, the
+  // bales go. A man with a tanker is telling you what he does for a living, and
+  // making him re-post that twice a week is how you lose the only people on here
+  // who own a truck. So the clock runs on loads, and trucks stay up until pulled.
+  function expires(l) {
+    return l.type !== 'truck';
+  }
+
   function daysLeft(ms) {
     return RUN_DAYS - Math.floor((Date.now() - ms) / 86400000);
   }
 
+  function spent(l) {
+    return expires(l) && daysLeft(l.posted) <= 0;
+  }
+
   function runBit(l) {
+    if (!expires(l)) return '<span class="run stand">Stays up until taken down</span>';
     var n = daysLeft(l.posted);
     if (n <= 0) return '<span class="run out">Ran its five days</span>';
     if (n === 1) return '<span class="run last">Last day</span>';
@@ -125,7 +138,7 @@
     });
     // Expired loads leave the board. Your own stay, so you are not left wondering
     // where your listing went - you get told, and you get a button to put it back.
-    return out.filter(function (l) { return l.mine || daysLeft(l.posted) > 0; });
+    return out.filter(function (l) { return l.mine || !spent(l); });
   }
 
   var LOADS = loadAll();
@@ -398,7 +411,7 @@
   }
 
   function card(l) {
-    var dead = daysLeft(l.posted) <= 0;
+    var dead = spent(l);
     var cls = 'load t-' + l.type + (l.mine ? ' mine' : '') + (dead ? ' spent' : '');
     var where = esc(l.town ? l.town + ', ' + l.county + ' County' : l.county + ' County');
     var dist = '';
