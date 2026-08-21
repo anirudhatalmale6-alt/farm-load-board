@@ -26,6 +26,10 @@
 <div class="wrap form">
   <div class="panel">
 
+    <div class="mebar" id="meBar" style="display:none">
+      Posting as <b id="meName"></b>. <a href="#" id="meChange">Not you?</a>
+    </div>
+
     <label class="fl">What is this?</label>
     <div class="pick" id="typePick">
       <button type="button" data-k="have">I have a load</button>
@@ -103,7 +107,17 @@
 (function () {
   'use strict';
   var STORE = 'flb.loads.v1';
+  var ME = 'flb.me.v1';
   var type = '';
+
+  // "Signing up" without an account: the first post remembers who you are,
+  // every one after that is already filled in. No password, nothing to forget.
+  function getMe() {
+    try { return JSON.parse(localStorage.getItem(ME) || 'null'); } catch (e) { return null; }
+  }
+  function setMe(m) {
+    try { localStorage.setItem(ME, JSON.stringify(m)); } catch (e) {}
+  }
 
   var sel = document.getElementById('county');
   sel.innerHTML = '<option value="">Choose a county</option>' +
@@ -133,6 +147,28 @@
     document.getElementById(id).className = on ? 'err show' : 'err';
   }
 
+  // prefill from last time
+  var meBar = document.getElementById('meBar');
+  (function fillMe() {
+    var m = getMe();
+    if (!m) { meBar.style.display = 'none'; return; }
+    document.getElementById('who').value = m.who || '';
+    document.getElementById('phone').value = m.phone || '';
+    if (m.county) document.getElementById('county').value = m.county;
+    if (m.town) document.getElementById('town').value = m.town || '';
+    document.getElementById('meName').textContent = m.who + (m.phone ? ' · ' + m.phone : '');
+    meBar.style.display = 'block';
+  })();
+
+  document.getElementById('meChange').addEventListener('click', function (e) {
+    e.preventDefault();
+    try { localStorage.removeItem(ME); } catch (err) {}
+    ['who', 'phone', 'town'].forEach(function (id) { document.getElementById(id).value = ''; });
+    document.getElementById('county').value = '';
+    meBar.style.display = 'none';
+    document.getElementById('who').focus();
+  });
+
   document.getElementById('saveBtn').addEventListener('click', function () {
     var v = function (id) { return document.getElementById(id).value.trim(); };
     var commodity = v('commodity'), county = v('county'), who = v('who'), phone = v('phone');
@@ -161,6 +197,8 @@
       phone: phone,
       posted: Date.now()
     };
+
+    setMe({ who: who, phone: phone, county: county, town: v('town') });
 
     var all = [];
     try { all = JSON.parse(localStorage.getItem(STORE) || '[]'); } catch (e) { all = []; }

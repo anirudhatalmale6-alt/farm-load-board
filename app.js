@@ -295,7 +295,9 @@
       (l.desc ? '<div class="desc">' + esc(l.desc) + '</div>' : '') +
       '<div class="load-foot">' +
         '<span class="who">' + esc(l.who) + '<span class="dot">&middot;</span>' +
-          'posted ' + daysAgo(l.posted) + '</span>' +
+          'posted ' + daysAgo(l.posted) +
+          (l.mine ? ' <button class="clearlink" data-drop="' + esc(l.id) +
+            '">Take it down</button>' : '') + '</span>' +
         '<span><span class="price">' + esc(l.price) + '</span>' +
         (l.phone ? ' <a class="btn btn-go btn-sm" href="' + telHref(l.phone) + '">Call ' +
           esc(l.phone) + '</a>' : '') + '</span>' +
@@ -345,6 +347,21 @@
     }
     list.innerHTML = v.map(card).join('');
   }
+
+  // your own postings: take one down when the load is gone
+  list.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('[data-drop]') : null;
+    if (!btn) return;
+    var id = btn.getAttribute('data-drop');
+    var kept = [];
+    try {
+      kept = JSON.parse(localStorage.getItem(STORE) || '[]')
+        .filter(function (m) { return m.id !== id; });
+      localStorage.setItem(STORE, JSON.stringify(kept));
+    } catch (err) {}
+    LOADS = LOADS.filter(function (l) { return l.id !== id; });
+    render();
+  });
 
   // deep link from the post page: ?mine=1
   if (/[?&]mine=1/.test(location.search)) {

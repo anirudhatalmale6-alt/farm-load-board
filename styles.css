@@ -150,6 +150,10 @@ select:focus,input:focus,textarea:focus{outline:2px solid #9fb197;outline-offset
   cursor:pointer;font-size:14.5px;font-weight:600;color:var(--ink-soft);font-family:inherit;
 }
 .pick button.on{background:var(--bar);border-color:var(--bar);color:#fff}
+.mebar{background:#eef3ea;border:1px solid #cfdcc6;border-radius:7px;
+  padding:10px 12px;margin-bottom:16px;font-size:14.5px;color:#3d5236}
+.mebar b{color:var(--ink)}
+.mebar a{color:var(--accent-dk)}
 .err{color:#a3341f;font-size:13.5px;margin-top:6px;display:none}
 .err.show{display:block}
 .saved{background:#e7f1e1;border:1px solid #bcd5b0;color:#31601f;padding:14px;
