@@ -22,14 +22,21 @@
   var TYPE_WORD = { have: 'Load available', need: 'Wanted', truck: 'Truck for hire' };
   var TYPE_PLURAL = { have: 'Loads available', need: 'Wanted listings', truck: 'Trucks for hire' };
 
+  // Ohio's five physiographic regions, off the state's own rest-area map.
+  // Farmers do not say "glaciated plateau", so every one carries a plain name too.
+  var REGIONS = [
+    { k: 'lake',        name: 'Lake Plains',        plain: 'the northwest flats' },
+    { k: 'till',        name: 'Till Plains',        plain: 'west and central farmland' },
+    { k: 'glaciated',   name: 'Glaciated Plateau',  plain: 'the northeast' },
+    { k: 'unglaciated', name: 'Unglaciated Plateau', plain: 'the southeast hills' },
+    { k: 'bluegrass',   name: 'Bluegrass',          plain: 'the south corner' }
+  ];
+  var REGION_NAME = {};
+  REGIONS.forEach(function (r) { REGION_NAME[r.k] = r.name; });
+
   var counties = window.OHIO.counties;
   var byName = {};
-  var regions = [];
-  counties.forEach(function (c) {
-    byName[c.n] = c;
-    if (regions.indexOf(c.r) === -1) regions.push(c.r);
-  });
-  regions.sort();
+  counties.forEach(function (c) { byName[c.n] = c; });
 
   // ---------- helpers ----------
 
@@ -148,12 +155,52 @@
   var hovName = document.getElementById('hovName');
 
   (function buildMap() {
-    var s = '<svg viewBox="0 0 ' + window.OHIO.w + ' ' + window.OHIO.h +
-            '" role="img" aria-label="Map of Ohio counties">';
+    var W = window.OHIO.w, H = window.OHIO.h, MPU = window.OHIO.mpu;
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H +
+            '" role="img" aria-label="Map of Ohio counties by region">';
+
+    // counties first, tinted by region - the colour blocks are the regions,
+    // exactly the way the state's own map does it
     counties.forEach(function (c) {
-      s += '<path class="cty" data-n="' + esc(c.n) + '" d="' + c.d + '"><title>' +
-           esc(c.n) + ' County</title></path>';
+      s += '<path class="cty" data-n="' + esc(c.n) + '" data-r="' + esc(c.r) +
+           '" d="' + c.d + '"><title>' + esc(c.n) + ' County</title></path>';
     });
+
+    // interstates on top, white casing under a dark line so they read over any colour
+    s += '<g class="roads">';
+    window.OHIO.roads.forEach(function (r) {
+      s += '<path class="road-case" d="' + r.d + '"/>';
+    });
+    window.OHIO.roads.forEach(function (r) {
+      s += '<path class="road" d="' + r.d + '"/>';
+    });
+    window.OHIO.roads.forEach(function (r) {
+      var w = r.n.length > 2 ? 76 : 50;
+      s += '<rect class="shield" x="' + (r.lx - w / 2) + '" y="' + (r.ly - 20) +
+           '" width="' + w + '" height="40" rx="7"/>' +
+           '<text class="shieldtx" x="' + r.lx + '" y="' + (r.ly + 11) + '">' +
+           esc(r.n) + '</text>';
+    });
+    s += '</g>';
+
+    s += '<g class="dots"></g>';
+
+    // scale bar and compass, in the empty corners of the bounding box
+    var bar = 50 / MPU;                       // 50 miles, in map units
+    var by = H - 34, bx = 24;
+    s += '<g class="deco">' +
+      '<rect class="barbg" x="' + (bx - 8) + '" y="' + (by - 24) + '" width="' + (bar + 16) +
+        '" height="46" rx="6"/>' +
+      '<line class="bar" x1="' + bx + '" y1="' + by + '" x2="' + (bx + bar) + '" y2="' + by + '"/>' +
+      '<line class="bar" x1="' + bx + '" y1="' + (by - 9) + '" x2="' + bx + '" y2="' + (by + 9) + '"/>' +
+      '<line class="bar" x1="' + (bx + bar) + '" y1="' + (by - 9) + '" x2="' + (bx + bar) +
+        '" y2="' + (by + 9) + '"/>' +
+      '<text class="barlb" x="' + (bx + bar / 2) + '" y="' + (by - 11) + '">50 miles</text>' +
+      '<g class="rose" transform="translate(' + (W - 62) + ',' + (H - 82) + ')">' +
+        '<path d="M0,-40 L11,10 L0,2 L-11,10 Z"/>' +
+        '<text x="0" y="42">N</text>' +
+      '</g></g>';
+
     s += '</svg>';
     mapHolder.innerHTML = s;
 
@@ -188,21 +235,28 @@
       }
       counts[l.county] = (counts[l.county] || 0) + 1;
     });
-    var max = 0;
-    for (var k in counts) if (counts[k] > max) max = counts[k];
-
     var paths = mapHolder.querySelectorAll('.cty');
     for (var i = 0; i < paths.length; i++) {
-      var p = paths[i], n = p.getAttribute('data-n'), c = counts[n] || 0;
-      var cls = '';
-      if (c > 0 && max > 0) {
-        var f = c / max;
-        cls = f > 0.75 ? ' l4' : f > 0.5 ? ' l3' : f > 0.25 ? ' l2' : ' l1';
-      }
-      if (state.region !== 'all' && byName[n].r !== state.region) cls = ' dim';
+      var p = paths[i], n = p.getAttribute('data-n');
+      // colour is the region, always - that is what makes it read as a map
+      var cls = 'cty r-' + byName[n].r;
+      if (state.region !== 'all' && byName[n].r !== state.region) cls = 'cty dim';
       if (state.county === n) cls += ' sel';
-      p.setAttribute('class', 'cty' + cls);
+      p.setAttribute('class', cls);
     }
+
+    // a dot on every county that has something on it, sized by how much
+    var dots = '';
+    counties.forEach(function (c) {
+      var n = counts[c.n] || 0;
+      if (!n) return;
+      if (state.region !== 'all' && c.r !== state.region) return;
+      var r = 17 + 7 * Math.sqrt(n - 1);
+      dots += '<circle class="ldot' + (state.county === c.n ? ' on' : '') + '" cx="' + c.x +
+              '" cy="' + c.y + '" r="' + r.toFixed(1) + '"><title>' + esc(c.n) +
+              ' County: ' + n + (n === 1 ? ' listing' : ' listings') + '</title></circle>';
+    });
+    mapHolder.querySelector('.dots').innerHTML = dots;
   }
 
   // ---------- controls ----------
@@ -233,7 +287,9 @@
   });
 
   regionSel.innerHTML = '<option value="all">Anywhere in Ohio</option>' +
-    regions.map(function (r) { return '<option value="' + r + '">' + r + ' Ohio</option>'; }).join('');
+    REGIONS.map(function (r) {
+      return '<option value="' + r.k + '">' + r.name + ' &mdash; ' + r.plain + '</option>';
+    }).join('');
   countySel.innerHTML = '<option value="all">Any county</option>' +
     counties.map(function (c) { return '<option value="' + c.n + '">' + c.n + '</option>'; }).join('');
 
@@ -354,7 +410,7 @@
       where = state.radius === 0
         ? ' in ' + state.county + ' County'
         : ' within ' + state.radius + ' miles of ' + state.county + ' County';
-    else if (state.region !== 'all') where = ' in ' + state.region + ' Ohio';
+    else if (state.region !== 'all') where = ' in the ' + REGION_NAME[state.region];
 
     if (!head) head = where ? 'Everything' : 'Everything on the board';
     return head + where;
@@ -366,7 +422,7 @@
 
     var hint = document.querySelector('.maphead .hint');
     if (state.county !== 'all') hint.textContent = 'Showing ' + state.county + ' County. Tap it again to clear.';
-    else if (state.region !== 'all') hint.textContent = 'Showing ' + state.region + ' Ohio. Tap any county to narrow it.';
+    else if (state.region !== 'all') hint.textContent = 'Showing the ' + REGION_NAME[state.region] + '. Tap any county to narrow it.';
     else hint.textContent = 'Tap a county to see what is moving there';
 
     listTitle.innerHTML = titleFor();

@@ -85,22 +85,58 @@ select:focus,input:focus,textarea:focus{outline:2px solid #9fb197;outline-offset
 
 /* ---------- map ---------- */
 .mapbox{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 10px 6px}
-.mapbox svg{width:100%;height:400px;max-height:52vh;display:block;touch-action:manipulation}
-@media (max-width:860px){.mapbox svg{height:340px}}
-.cty{fill:#eae4d5;stroke:#fff;stroke-width:1.6;cursor:pointer}
-.cty:hover{stroke:var(--bar);stroke-width:2.2}
-.cty.sel{stroke:var(--accent);stroke-width:3.4}
-.cty.l1{fill:#d8e3cd}.cty.l2{fill:#b9d0a8}.cty.l3{fill:#8fb87a}.cty.l4{fill:#5f9448}
-.cty.dim{fill:#efece3}
+.mapbox svg{width:100%;height:470px;max-height:62vh;display:block;touch-action:manipulation}
+@media (max-width:860px){.mapbox svg{height:360px}}
+.cty{fill:#eae4d5;stroke:#fdfbf6;stroke-width:1.4;cursor:pointer}
+.cty:hover{stroke:var(--bar);stroke-width:2.6}
+.cty.sel{stroke:var(--accent);stroke-width:4}
+.cty.dim{fill:#ece9e0}
+/* the five regions, off the state's own map - muted a shade so the
+   roads and the load dots still read on top of them */
+.r-lake{fill:#bcd4b0}
+.r-till{fill:#a9cad6}
+.r-glaciated{fill:#dda79e}
+.r-unglaciated{fill:#c4b2d3}
+.r-bluegrass{fill:#e9c692}
+
+/* roads and dots must never eat a county tap */
+.roads,.dots,.deco{pointer-events:none}
+.road-case{fill:none;stroke:#fdfbf6;stroke-width:9;stroke-linecap:round;stroke-linejoin:round}
+.road{fill:none;stroke:#5b5f52;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
+.shield{fill:#fdfbf6;stroke:#5b5f52;stroke-width:2.6}
+.shieldtx{font:700 27px Georgia,serif;fill:#33372c;text-anchor:middle}
+.ldot{fill:#8f4023;fill-opacity:.82;stroke:#fffdf8;stroke-width:3}
+.ldot.on{fill:#b0522c;fill-opacity:1;stroke-width:5}
+.deco .barbg{fill:#fffdf8;fill-opacity:.8}
+.deco .bar{stroke:#5b5f52;stroke-width:3.4}
+.deco .barlb{font:600 25px Georgia,serif;fill:#5b5f52;text-anchor:middle}
+.deco .rose path{fill:#5b5f52}
+.deco .rose text{font:600 30px Georgia,serif;fill:#5b5f52;text-anchor:middle}
 /* fixed height on purpose: the hover label must never reflow the map,
    or a tap lands on the county above the one you aimed at */
 .maphead{position:relative;height:30px;padding:4px 4px 0;font-size:13.5px;
   color:var(--ink-soft);overflow:hidden}
 .maphead .hint{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (hover:hover){.maphead .hint{padding-right:118px}}
-.legend{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ink-soft);
-  padding:2px 4px 6px}
-.legend i{width:20px;height:11px;border-radius:2px;display:inline-block}
+/* the sign's key, boxed the same way a printed map boxes it */
+.key{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;
+  margin:8px 2px 2px;padding:9px 11px;font-size:12.5px;color:var(--ink-soft);
+  border:1px solid var(--line);border-radius:6px;background:#fdfbf6}
+.keyt{width:100%;font-family:Georgia,serif;font-weight:600;font-size:12px;
+  letter-spacing:.9px;text-transform:uppercase;color:var(--ink);margin-bottom:3px}
+/* no nowrap here: the longest key line is wider than a 320px phone and would
+   set the column's min-content width, scrolling the whole page sideways */
+.key .k{display:flex;align-items:center;gap:6px;min-width:0}
+.key i{width:18px;height:12px;border-radius:2px;display:inline-block;
+  border:1px solid rgba(0,0,0,.14);flex:none}
+/* the swatches are HTML, not SVG, so they need background - fill does nothing here */
+.key i.r-lake{background:#bcd4b0}
+.key i.r-till{background:#a9cad6}
+.key i.r-glaciated{background:#dda79e}
+.key i.r-unglaciated{background:#c4b2d3}
+.key i.r-bluegrass{background:#e9c692}
+.key i.kdot{width:12px;height:12px;border-radius:50%;background:#8f4023;
+  opacity:.85;border:1px solid #fffdf8}
 .hovname{display:none;position:absolute;right:4px;top:4px;max-width:112px;
   font-weight:600;color:var(--ink);background:var(--card);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
