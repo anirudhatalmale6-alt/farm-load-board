@@ -90,12 +90,18 @@ select:focus,input:focus,textarea:focus{outline:2px solid #9fb197;outline-offset
 .cty.sel{stroke:var(--accent);stroke-width:3.4}
 .cty.l1{fill:#d8e3cd}.cty.l2{fill:#b9d0a8}.cty.l3{fill:#8fb87a}.cty.l4{fill:#5f9448}
 .cty.dim{fill:#efece3}
-.maphead{display:flex;justify-content:space-between;align-items:center;gap:10px;
-  padding:2px 4px 8px;font-size:13.5px;color:var(--ink-soft)}
+/* fixed height on purpose: the hover label must never reflow the map,
+   or a tap lands on the county above the one you aimed at */
+.maphead{position:relative;height:30px;padding:4px 4px 0;font-size:13.5px;
+  color:var(--ink-soft);overflow:hidden}
+.maphead .hint{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  padding-right:120px}
 .legend{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ink-soft);
   padding:2px 4px 6px}
 .legend i{width:20px;height:11px;border-radius:2px;display:inline-block}
-.hovname{font-weight:600;color:var(--ink)}
+.hovname{position:absolute;right:4px;top:4px;max-width:115px;font-weight:600;color:var(--ink);
+  background:var(--card);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  padding-left:8px;pointer-events:none}
 
 /* ---------- listings ---------- */
 .listhead{display:flex;justify-content:space-between;align-items:baseline;
