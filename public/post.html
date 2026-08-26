@@ -21,7 +21,8 @@
   </div>
 </header>
 
-<div class="demo">Prototype &mdash; what you post here is saved on this phone only, so post away and see how it looks.</div>
+<div class="demo">What you put up here goes on the real board and everyone can see it.
+  Your phone number is not shown until somebody asks for it.</div>
 
 <div class="wrap form">
   <div class="panel">
@@ -107,7 +108,7 @@
 <script>
 (function () {
   'use strict';
-  var STORE = 'flb.loads.v1';
+  var TOKEN = 'flb.token.v1';
   var ME = 'flb.me.v1';
   var type = '';
 
@@ -118,6 +119,15 @@
   }
   function setMe(m) {
     try { localStorage.setItem(ME, JSON.stringify(m)); } catch (e) {}
+  }
+
+  // The token is separate from all that. It is what proves a listing is yours
+  // when you come back to take it down, and the server is the one that issues it.
+  function myToken() {
+    try { return localStorage.getItem(TOKEN) || ''; } catch (e) { return ''; }
+  }
+  function keepToken(t) {
+    try { if (t) localStorage.setItem(TOKEN, t); } catch (e) {}
   }
 
   var sel = document.getElementById('county');
@@ -150,6 +160,7 @@
         o.className = o === b ? 'on' : '';
       });
       help.textContent = HELP[type];
+      help.style.color = '';
       runNote.textContent = RUNNOTE[type];
     });
   });
@@ -180,7 +191,9 @@
     document.getElementById('who').focus();
   });
 
-  document.getElementById('saveBtn').addEventListener('click', function () {
+  var btn = document.getElementById('saveBtn');
+
+  btn.addEventListener('click', function () {
     var v = function (id) { return document.getElementById(id).value.trim(); };
     var commodity = v('commodity'), county = v('county'), who = v('who'), phone = v('phone');
 
@@ -195,28 +208,36 @@
       return;
     }
 
-    var rec = {
-      id: 'u' + Date.now(),
-      type: type,
-      commodity: commodity,
-      qty: v('qty') || 'Call for details',
-      price: v('price') || 'Call',
-      county: county,
-      town: v('town'),
-      desc: v('desc'),
-      who: who,
-      phone: phone,
-      posted: Date.now()
-    };
-
     setMe({ who: who, phone: phone, county: county, town: v('town') });
 
-    var all = [];
-    try { all = JSON.parse(localStorage.getItem(STORE) || '[]'); } catch (e) { all = []; }
-    all.push(rec);
-    try { localStorage.setItem(STORE, JSON.stringify(all)); } catch (e) {}
+    var headers = { 'Content-Type': 'application/json' };
+    if (myToken()) headers['X-Board-Token'] = myToken();
 
-    location.href = 'index.html?mine=1';
+    btn.disabled = true;
+    btn.textContent = 'Putting it up...';
+
+    fetch('/api/loads', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({
+        type: type, commodity: commodity, qty: v('qty'), price: v('price'),
+        county: county, town: v('town'), desc: v('desc'), who: who, phone: phone
+      })
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error(j.error || 'It did not go up. Try again in a minute.');
+        return j;
+      });
+    }).then(function (j) {
+      keepToken(j.token);
+      location.href = 'index.html?mine=1';
+    }).catch(function (err) {
+      btn.disabled = false;
+      btn.textContent = 'Put it on the board';
+      help.textContent = err.message;
+      help.style.color = '#a3341f';
+      help.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
   });
 })();
 </script>

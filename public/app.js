@@ -1,7 +1,29 @@
 (function () {
   'use strict';
 
-  var STORE = 'flb.loads.v1';
+  // Who this phone is. Not an account and not a password - just a long random
+  // string this browser keeps, which is what lets you take your own listing back
+  // down. The server never learns a name from it.
+  var TOKEN = 'flb.token.v1';
+  function me() {
+    var t = null;
+    try { t = localStorage.getItem(TOKEN); } catch (e) {}
+    return t || '';
+  }
+  function api(method, url, body) {
+    var opts = { method: method, headers: {} };
+    if (me()) opts.headers['X-Board-Token'] = me();
+    if (body) {
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(body);
+    }
+    return fetch(url, opts).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error(j.error || 'Something went wrong.');
+        return j;
+      });
+    });
+  }
 
   var TYPES = [
     { k: 'all',   label: 'Everything' },
@@ -61,30 +83,24 @@
     return Math.round(2 * R * Math.asin(Math.sqrt(h)));
   }
 
-  // A load runs five days and then comes off on its own. That is the whole point
-  // of the name, and it is what keeps the board from filling up with loads that
-  // went last month and never got taken down.
-  var RUN_DAYS = 5;
-
   // A truck is not a load. A load has a clock on it - the pit gets pumped, the
   // bales go. A man with a tanker is telling you what he does for a living, and
   // making him re-post that twice a week is how you lose the only people on here
   // who own a truck. So the clock runs on loads, and trucks stay up until pulled.
-  function expires(l) {
-    return l.type !== 'truck';
-  }
+  // The clock itself is the server's - this only reads what it was told.
+  function expires(l) { return l.expires != null; }
 
-  function daysLeft(ms) {
-    return RUN_DAYS - Math.floor((Date.now() - ms) / 86400000);
+  function daysLeft(l) {
+    return Math.ceil((l.expires - Date.now()) / 86400000);
   }
 
   function spent(l) {
-    return expires(l) && daysLeft(l.posted) <= 0;
+    return expires(l) && l.expires <= Date.now();
   }
 
   function runBit(l) {
     if (!expires(l)) return '<span class="run stand">Stays up until taken down</span>';
-    var n = daysLeft(l.posted);
+    var n = daysLeft(l);
     if (n <= 0) return '<span class="run out">Ran its five days</span>';
     if (n === 1) return '<span class="run last">Last day</span>';
     return '<span class="run">' + n + ' days left</span>';
@@ -110,38 +126,16 @@
 
   // ---------- data ----------
 
-  function loadAll() {
-    var out = window.SAMPLES.map(function (s, i) {
-      return {
-        id: 's' + i,
-        type: s.t,
-        commodity: s.c,
-        cat: categorize(s.c, s.t),
-        qty: s.qty,
-        county: s.county,
-        town: s.town,
-        price: s.price,
-        desc: s.x,
-        who: s.who,
-        phone: s.ph,
-        posted: Date.now() - s.d * 86400000,
-        mine: false
-      };
-    });
+  var LOADS = [];
 
-    var mine = [];
-    try { mine = JSON.parse(localStorage.getItem(STORE) || '[]'); } catch (e) { mine = []; }
-    mine.forEach(function (m) {
-      m.mine = true;
-      m.cat = categorize(m.commodity, m.type);
-      out.push(m);
+  function fetchLoads() {
+    return api('GET', '/api/loads').then(function (j) {
+      LOADS = (j.loads || []).map(function (l) {
+        l.cat = categorize(l.commodity, l.type);
+        return l;
+      });
     });
-    // Expired loads leave the board. Your own stay, so you are not left wondering
-    // where your listing went - you get told, and you get a button to put it back.
-    return out.filter(function (l) { return l.mine || !spent(l); });
   }
-
-  var LOADS = loadAll();
 
   // ---------- state ----------
 
@@ -269,6 +263,7 @@
   function paintMap() {
     var counts = {};
     LOADS.forEach(function (l) {
+      if (spent(l)) return;
       if (state.type !== 'all' && l.type !== state.type) return;
       if (state.cat !== 'all') {
         if (state.cat === 'truck') { if (l.type !== 'truck') return; }
@@ -352,7 +347,7 @@
   });
 
   function syncControls() {
-    var i, c;
+    var i;
     var tc = typeChips.children;
     for (i = 0; i < tc.length; i++)
       tc[i].className = 'chip' + (tc[i].getAttribute('data-k') === state.type ? ' on' : '');
@@ -369,42 +364,28 @@
     radiusSel.style.opacity = on ? '1' : '.5';
   }
 
-  // ---------- interest ----------
-  // The number is not in the page until somebody asks for it: scrapers get nothing,
-  // and the count of who asked is what tells a poster the board is alive.
-  // Prototype: counts live on this device. Real version counts on the server.
-
-  var VIEWS = 'flb.views.v1';
-  var SHOWN = {};                       // revealed this visit only
-
-  function views() {
-    try { return JSON.parse(localStorage.getItem(VIEWS) || '{}'); } catch (e) { return {}; }
-  }
-  function bumpView(id) {
-    var v = views();
-    v[id] = (v[id] || 0) + 1;
-    try { localStorage.setItem(VIEWS, JSON.stringify(v)); } catch (e) {}
-    return v[id];
-  }
-
   // ---------- listings ----------
+  // The number is not in the page at all until somebody asks for it. It is not
+  // hidden with a bit of styling either - the server simply does not send it,
+  // so anything scraping the board comes away with no numbers.
+
+  var SHOWN = {};                       // numbers handed out this visit
 
   var list = document.getElementById('list');
   var listTitle = document.getElementById('listTitle');
   var listCount = document.getElementById('listCount');
 
   function phoneBit(l) {
-    if (!l.phone) return '';
     if (SHOWN[l.id])
-      return ' <a class="btn btn-go btn-sm" href="' + telHref(l.phone) + '">Call ' +
-             esc(l.phone) + '</a>';
+      return ' <a class="btn btn-go btn-sm" href="' + telHref(SHOWN[l.id]) + '">Call ' +
+             esc(SHOWN[l.id]) + '</a>';
     return ' <button class="btn btn-go btn-sm" data-show="' + esc(l.id) + '">Show number</button>';
   }
 
   // Only the poster sees who has been asking - that is what brings him back.
   function interestBit(l) {
     if (!l.mine) return '';
-    var n = views()[l.id] || 0;
+    var n = l.interest || 0;
     if (!n) return '<div class="interest">Nobody has asked for your number yet.</div>';
     return '<div class="interest on">' + n +
       (n === 1 ? ' person has' : ' people have') + ' asked for your number.</div>';
@@ -423,7 +404,8 @@
 
     return '<div class="' + cls + '">' +
       '<div class="load-top"><h3>' + esc(l.commodity) + '</h3>' + pill + '</div>' +
-      '<div class="runline">' + runBit(l) + '</div>' +
+      '<div class="runline">' + runBit(l) +
+        (l.demo ? '<span class="run demo">Sample listing</span>' : '') + '</div>' +
       '<div class="meta"><b>' + esc(l.qty) + '</b><span class="dot">&middot;</span>' +
         where + dist + '</div>' +
       (l.desc ? '<div class="desc">' + esc(l.desc) + '</div>' : '') +
@@ -482,14 +464,26 @@
     list.innerHTML = v.map(card).join('');
   }
 
-  // reveal a number on request
+  function oops(e) {
+    var b = document.createElement('div');
+    b.className = 'saved warn';
+    b.style.margin = '0 16px 6px';
+    b.textContent = e.message || 'Something went wrong. Try again in a minute.';
+    var w = document.querySelector('.wrap');
+    w.insertBefore(b, w.firstChild);
+    setTimeout(function () { b.remove(); }, 6000);
+  }
+
+  // ask for a number
   list.addEventListener('click', function (e) {
     var ask = e.target.closest ? e.target.closest('[data-show]') : null;
     if (!ask) return;
     var id = ask.getAttribute('data-show');
-    SHOWN[id] = true;
-    bumpView(id);
-    render();
+    ask.disabled = true;
+    ask.textContent = 'Getting it...';
+    api('POST', '/api/loads/' + encodeURIComponent(id) + '/number')
+      .then(function (j) { SHOWN[id] = j.phone; render(); })
+      .catch(function (err) { oops(err); render(); });
   });
 
   // your own postings: take one down when the load is gone
@@ -497,14 +491,13 @@
     var btn = e.target.closest ? e.target.closest('[data-drop]') : null;
     if (!btn) return;
     var id = btn.getAttribute('data-drop');
-    var kept = [];
-    try {
-      kept = JSON.parse(localStorage.getItem(STORE) || '[]')
-        .filter(function (m) { return m.id !== id; });
-      localStorage.setItem(STORE, JSON.stringify(kept));
-    } catch (err) {}
-    LOADS = LOADS.filter(function (l) { return l.id !== id; });
-    render();
+    btn.disabled = true;
+    api('DELETE', '/api/loads/' + encodeURIComponent(id))
+      .then(function () {
+        LOADS = LOADS.filter(function (l) { return l.id !== id; });
+        render();
+      })
+      .catch(oops);
   });
 
   // a spent listing of your own, put back up for another five days
@@ -512,16 +505,15 @@
     var btn = e.target.closest ? e.target.closest('[data-again]') : null;
     if (!btn) return;
     var id = btn.getAttribute('data-again');
-    var now = Date.now();
-    try {
-      var kept = JSON.parse(localStorage.getItem(STORE) || '[]').map(function (m) {
-        if (m.id === id) m.posted = now;
-        return m;
-      });
-      localStorage.setItem(STORE, JSON.stringify(kept));
-    } catch (err) {}
-    LOADS.forEach(function (l) { if (l.id === id) l.posted = now; });
-    render();
+    btn.disabled = true;
+    api('POST', '/api/loads/' + encodeURIComponent(id) + '/repost')
+      .then(function (j) {
+        LOADS = LOADS.map(function (l) {
+          return l.id === id ? (j.load.cat = categorize(j.load.commodity, j.load.type), j.load) : l;
+        });
+        render();
+      })
+      .catch(oops);
   });
 
   // deep link from the post page: ?mine=1
@@ -529,10 +521,14 @@
     var banner = document.createElement('div');
     banner.className = 'saved';
     banner.style.margin = '0 16px 6px';
-    banner.textContent = 'Your listing is up. It is at the top of the board, marked "Yours".';
+    banner.textContent = 'Your listing is up. It is on the board now, and everyone else can see it too.';
     document.querySelector('.wrap').insertBefore(banner, document.querySelector('.cols'));
   }
 
   syncControls();
-  render();
+  list.innerHTML = '<div class="empty"><b>Loading the board...</b></div>';
+  fetchLoads().then(render).catch(function (e) {
+    list.innerHTML = '<div class="empty"><b>Could not reach the board</b>' +
+      esc(e.message) + '<br><br>Check your signal and pull down to refresh.</div>';
+  });
 })();
