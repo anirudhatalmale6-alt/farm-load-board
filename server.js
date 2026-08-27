@@ -15,7 +15,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { query, migrate } from './db.js';
+import { query, migrate, isReady } from './db.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(HERE, 'public');
@@ -140,6 +140,14 @@ app.set('trust proxy', 1);
 app.use(express.json({ limit: '32kb' }));
 
 const who = (req) => clean(req.get('X-Board-Token'), 64);
+
+// Until the tables are there, the board says so in a sentence instead of
+// throwing five hundreds. Health is let through on purpose - it is the thing
+// you look at to find out why.
+app.use('/api', (req, res, next) => {
+  if (isReady() || req.path === '/health') return next();
+  res.status(503).json({ error: 'The board is still starting up. Give it a minute.' });
+});
 
 app.get('/api/health', async (_req, res) => {
   try {
@@ -285,12 +293,20 @@ export { app };
 // Started when this file is run directly. Left alone when the tests import it,
 // so they can drive the same app on their own port without a second database.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  migrate()
-    .then(() => {
-      app.listen(PORT, () => console.log('five days freight listening on ' + PORT));
-    })
-    .catch((e) => {
-      console.error('could not start:', e.message);
-      process.exit(1);
-    });
+  // Listening comes first and never waits on the database. A server that exits
+  // because its database is not attached yet reads to the person setting it up
+  // as a thing that is broken, when it is a thing that is not finished.
+  app.listen(PORT, () => console.log('five days freight listening on ' + PORT));
+  prepare();
+}
+
+async function prepare(attempt = 1) {
+  try {
+    await migrate();
+    console.log('board ready');
+  } catch (e) {
+    const wait = Math.min(30, attempt * 3);
+    console.error(`database not ready (${e.message}) - trying again in ${wait}s`);
+    setTimeout(() => prepare(attempt + 1), wait * 1000);
+  }
 }

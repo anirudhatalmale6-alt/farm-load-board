@@ -24,13 +24,29 @@ if (url) {
   pool.on('error', (e) => console.error('database pool error:', e.message));
   query = (sql, params) => pool.query(sql, params);
 } else {
-  const { PGlite } = await import('@electric-sql/pglite');
-  const dir = process.env.LOCAL_DB_DIR || './pgdata';
-  const local = new PGlite(dir);
-  await local.waitReady;
-  query = (sql, params) => local.query(sql, params);
-  console.log('no DATABASE_URL - using the local database in ' + dir);
+  // The in-process database is a development dependency, so it is not installed
+  // on a real server. There is a gap of a few minutes between a first deploy and
+  // Postgres being attached to it, and in that gap this import fails. The server
+  // has to survive that and keep serving the pages, rather than die here and
+  // report itself crashed while somebody is stood there setting it up.
+  try {
+    const { PGlite } = await import('@electric-sql/pglite');
+    const dir = process.env.LOCAL_DB_DIR || './pgdata';
+    const local = new PGlite(dir);
+    await local.waitReady;
+    query = (sql, params) => local.query(sql, params);
+    console.log('no DATABASE_URL - using the local database in ' + dir);
+  } catch {
+    console.error('no database attached yet - the pages will serve, the board will not');
+    query = async () => { throw new Error('no database attached yet'); };
+  }
 }
+
+// Flipped by migrate(), which is the only thing that proves the database is both
+// reachable and has its tables. Read by the server to decide whether the board
+// can answer at all.
+let ready = false;
+export const isReady = () => ready;
 
 export { query };
 
@@ -70,4 +86,6 @@ export async function migrate() {
                on loads (taken_down_at, expires_at)`);
   await query(`create index if not exists loads_owner_idx
                on loads (owner_token)`);
+
+  ready = true;
 }
