@@ -1,5 +1,5 @@
 {
-  "name": "project",
+  "name": "five-days-freight",
   "version": "1.0.0",
   "private": true,
   "description": "Ohio farm load board",
@@ -9,8 +9,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "node canary.js && tsc",
-    "prepare": "node canary.js"
+    "start": "node server.js",
+    "test": "node test.js"
   },
   "dependencies": {
     "express": "^4.21.2",
